@@ -179,8 +179,8 @@ final class CameraSessionPresetsTests: XCTestCase {
     waitForExpectations(timeout: 30, handler: nil)
   }
 
-  // Fork VIK: um formato 4:3 que exclui a ultra-wide (o mínimo de zoom sobe de 0,5 para 1)
-  // é pulado em favor do próximo que a preserva.
+  // Fork VIK: um formato 4:3 que exclui a ultra-wide (o mínimo nativo de zoom sobe de 1.0, o
+  // 0,5× da interface, para 2.0) é pulado em favor do próximo que a preserva.
   func testResolutionPresetVeryHigh_skipsFourByThreeFormatThatDropsUltraWide() {
     let presetExpectation = expectation(description: "Expected inputPriority preset set")
     let formatExpectation = expectation(description: "Expected lens-preserving format set")
@@ -202,12 +202,12 @@ final class CameraSessionPresetsTests: XCTestCase {
 
     let captureDeviceMock = MockCaptureDevice()
     var activeFormat: CaptureDeviceFormat = original
-    captureDeviceMock.minAvailableVideoZoomFactor = 0.5
+    captureDeviceMock.minAvailableVideoZoomFactor = 1.0
     captureDeviceMock.flutterFormats = [original, keepsUltraWide, dropsUltraWide]
     captureDeviceMock.activeFormatStub = { activeFormat }
     captureDeviceMock.setActiveFormatStub = { format in
       activeFormat = format
-      captureDeviceMock.minAvailableVideoZoomFactor = format === dropsUltraWide ? 1.0 : 0.5
+      captureDeviceMock.minAvailableVideoZoomFactor = format === dropsUltraWide ? 2.0 : 1.0
       if format === keepsUltraWide { formatExpectation.fulfill() }
     }
 
@@ -247,12 +247,12 @@ final class CameraSessionPresetsTests: XCTestCase {
 
     let captureDeviceMock = MockCaptureDevice()
     var activeFormat: CaptureDeviceFormat = original
-    captureDeviceMock.minAvailableVideoZoomFactor = 0.5
+    captureDeviceMock.minAvailableVideoZoomFactor = 1.0
     captureDeviceMock.flutterFormats = [original, dropsUltraWide]
     captureDeviceMock.activeFormatStub = { activeFormat }
     captureDeviceMock.setActiveFormatStub = { format in
       activeFormat = format
-      captureDeviceMock.minAvailableVideoZoomFactor = format === dropsUltraWide ? 1.0 : 0.5
+      captureDeviceMock.minAvailableVideoZoomFactor = format === dropsUltraWide ? 2.0 : 1.0
     }
 
     let configuration = CameraTestUtils.createTestCameraConfiguration()

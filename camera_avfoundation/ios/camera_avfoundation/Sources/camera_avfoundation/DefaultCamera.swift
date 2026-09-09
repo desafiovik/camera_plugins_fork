@@ -383,9 +383,10 @@ final class DefaultCamera: NSObject, Camera {
 
   /// Fork VIK: lado maior mínimo de um formato 4:3 para valer a troca.
   ///
-  /// Abaixo disso o 16:9 de upstream (1920×1080) tem mais pixels úteis do que o 4:3
-  /// escolhido, e a troca degradaria a foto em silêncio na dimensão que o card queria
-  /// melhorar.
+  /// Sem piso, o primeiro 4:3 que preservasse a ultra-wide podia ser 640×480, e a foto
+  /// degradaria em silêncio na dimensão que o card queria melhorar. 1280×960 ainda tem
+  /// menos pixels que o 1920×1080 de upstream, mas entrega o campo de visão inteiro do
+  /// sensor com nitidez suficiente para o comprovante; abaixo disso o 16:9 vale mais.
   static let fourByThreeMinSide: Int32 = 1280
 
   /// Fork VIK: fixa o maior formato 4:3 (lado maior até `maxSide`) que não perde lente.
