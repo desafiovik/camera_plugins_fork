@@ -63,7 +63,7 @@ protocol CapturePhotoOutput: CaptureOutput {
 
   /// Corresponds to the `maxPhotoQualityPrioritization` property of `AVCapturePhotoOutput`.
   /// Fork VIK (desafiovik/camera_plugins_fork): o teto tem de ser `.quality` antes de a sessão
-  /// subir para que cada captura possa pedir `.quality` (card 86akfrx6z).
+  /// subir para que cada captura possa pedir `.quality` (card 86akfmupr).
   var maxPhotoQualityPrioritization: AVCapturePhotoOutput.QualityPrioritization { get set }
 
   /// Corresponds to the `capturePhotoWithSettings` method of `AVCapturePhotoOutput`

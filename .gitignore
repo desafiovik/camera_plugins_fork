@@ -1,0 +1,10 @@
+# Artefatos de build e de resolução: nunca entram no fork (o pin é por commit
+# e todo `pub get` clona o repositório inteiro).
+.dart_tool/
+build/
+.fvm/
+pubspec.lock
+.flutter-plugins
+.flutter-plugins-dependencies
+**/local.properties
+*.iml
