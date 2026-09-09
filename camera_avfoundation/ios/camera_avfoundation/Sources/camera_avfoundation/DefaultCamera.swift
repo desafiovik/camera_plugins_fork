@@ -381,18 +381,32 @@ final class DefaultCamera: NSObject, Camera {
     }.map { $0.format }
   }
 
+  /// Fork VIK: lado maior mínimo de um formato 4:3 para valer a troca.
+  ///
+  /// Abaixo disso o 16:9 de upstream (1920×1080) tem mais pixels úteis do que o 4:3
+  /// escolhido, e a troca degradaria a foto em silêncio na dimensão que o card queria
+  /// melhorar.
+  static let fourByThreeMinSide: Int32 = 1280
+
   /// Fork VIK: fixa o maior formato 4:3 (lado maior até `maxSide`) que não perde lente.
   ///
-  /// A ultra-wide só existe no device virtual, e só nos formatos que a têm como
-  /// constituinte: neles `minAvailableVideoZoomFactor` fica abaixo de 1. Um formato que a
-  /// exclui sobe o mínimo para 1, e o seletor de lentes do app (que lê esse mínimo) perderia
-  /// o 0,5× em silêncio. O mínimo sob o formato original é a régua: candidato que o sobe é
-  /// pulado, e sem candidato o formato original volta. Device que não trava (ocupado por
-  /// outro app) devolve `false` sem tocar em nada: quem chama cai no preset 16:9 de upstream.
+  /// A ultra-wide só existe no device virtual (`builtInTripleCamera` e parentes), e só
+  /// nos formatos que a têm como constituinte. Nesses, `minAvailableVideoZoomFactor` é o
+  /// fator nativo da ultra-wide (1.0, que a interface mostra como 0,5×); num formato que a
+  /// exclui, o mínimo sobe para o fator da wide (~2.0). O seletor de lentes do app lê esse
+  /// mínimo e perderia o 0,5× em silêncio. O mínimo sob o formato original é a régua:
+  /// candidato que o sobe é pulado, e sem candidato o formato original volta. Device que
+  /// não trava (ocupado por outro app) devolve `false` sem tocar em nada: quem chama cai
+  /// no preset 16:9 de upstream. Candidato com lado maior abaixo de `fourByThreeMinSide`
+  /// nem entra.
   func applyFourByThreeFormat(forCaptureDevice captureDevice: CaptureDevice, maxSide: Int32)
     -> Bool
   {
     let candidates = fourByThreeFormats(forCaptureDevice: captureDevice, maxSide: maxSide)
+      .filter { format in
+        let resolution = videoDimensionsConverter(format)
+        return max(resolution.width, resolution.height) >= DefaultCamera.fourByThreeMinSide
+      }
     if candidates.isEmpty { return false }
     guard (try? captureDevice.lockForConfiguration()) != nil else { return false }
     defer { captureDevice.unlockForConfiguration() }

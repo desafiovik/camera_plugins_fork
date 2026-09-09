@@ -8,3 +8,5 @@ pubspec.lock
 .flutter-plugins-dependencies
 **/local.properties
 *.iml
+.fvmrc
+**/GeneratedPluginRegistrant.java

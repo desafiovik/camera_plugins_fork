@@ -270,6 +270,37 @@ final class CameraSessionPresetsTests: XCTestCase {
     XCTAssertTrue(activeFormat === original)
   }
 
+  // Fork VIK: candidato 4:3 abaixo do piso (lado maior < 1280) não vale a troca; sem outro
+  // candidato, o preset cai no 16:9 de upstream.
+  func testResolutionPresetVeryHigh_ignoresFourByThreeFormatsBelowFloor() {
+    let expectation = self.expectation(description: "Expected hd1920x1080 preset set")
+
+    let videoSessionMock = MockCaptureSession()
+    videoSessionMock.canSetSessionPresetStub = { _ in true }
+    videoSessionMock.setSessionPresetStub = { preset in
+      if preset == .hd1920x1080 { expectation.fulfill() }
+      XCTAssertNotEqual(preset, .inputPriority)
+    }
+
+    let tiny = MockCaptureDeviceFormat()
+    let captureDeviceMock = MockCaptureDevice()
+    captureDeviceMock.flutterFormats = [tiny]
+    captureDeviceMock.setActiveFormatStub = { _ in
+      XCTFail("640x480 não pode substituir o 1920x1080 de upstream")
+    }
+
+    let configuration = CameraTestUtils.createTestCameraConfiguration()
+    configuration.videoCaptureDeviceFactory = { _ in captureDeviceMock }
+    configuration.videoDimensionsConverter = { _ in CMVideoDimensions(width: 640, height: 480) }
+    configuration.videoCaptureSession = videoSessionMock
+    configuration.mediaSettings = CameraTestUtils.createDefaultMediaSettings(
+      resolutionPreset: FCPPlatformResolutionPreset.veryHigh)
+
+    let _ = CameraTestUtils.createTestCamera(configuration)
+
+    waitForExpectations(timeout: 30, handler: nil)
+  }
+
   // Fork VIK: device que não trava (ocupado por outro app) não aborta a criação da câmera;
   // veryHigh degrada para o preset 16:9 como em upstream.
   func testResolutionPresetVeryHigh_fallsBackTo1080pWhenDeviceCannotBeLocked() {
