@@ -61,6 +61,11 @@ protocol CapturePhotoOutput: CaptureOutput {
   /// Corresponds to the `supportedFlashModes` property of `AVCapturePhotoOutput`
   var supportedFlashModes: [AVCaptureDevice.FlashMode] { get }
 
+  /// Corresponds to the `maxPhotoQualityPrioritization` property of `AVCapturePhotoOutput`.
+  /// Fork VIK (desafiovik/camera_plugins_fork): o teto tem de ser `.quality` antes de a sessão
+  /// subir para que cada captura possa pedir `.quality` (card 86akfrx6z).
+  var maxPhotoQualityPrioritization: AVCapturePhotoOutput.QualityPrioritization { get set }
+
   /// Corresponds to the `capturePhotoWithSettings` method of `AVCapturePhotoOutput`
   func capturePhoto(with settings: AVCapturePhotoSettings, delegate: AVCapturePhotoCaptureDelegate)
 }

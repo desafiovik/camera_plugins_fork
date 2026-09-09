@@ -184,6 +184,10 @@ final class DefaultCamera: NSObject, Camera {
 
     capturePhotoOutput = AVCapturePhotoOutput()
     capturePhotoOutput.isHighResolutionCaptureEnabled = true
+    // Fork VIK: deixa cada captura pedir o processamento de qualidade (fusão de quadros
+    // onde o formato ativo permite) em vez do balanceado padrão. É o mesmo que o app de
+    // câmera do sistema pede.
+    capturePhotoOutput.maxPhotoQualityPrioritization = .quality
 
     videoCaptureSession.automaticallyConfiguresApplicationAudioSession = false
     audioCaptureSession.automaticallyConfiguresApplicationAudioSession = false
@@ -299,6 +303,21 @@ final class DefaultCamera: NSObject, Camera {
       }
       fallthrough
     case .veryHigh:
+      // Fork VIK (desafiovik/camera_plugins_fork): 4:3 com lado maior de 1920, o
+      // enquadramento do sensor e do app de câmera do sistema. O preset
+      // `.hd1920x1080` de upstream é 16:9 e descartava 25% do campo lateral em pé,
+      // que a comunidade lia como "zoom" no comprovante (card 86akfrx6z). Não há
+      // preset de sessão 4:3 nessa faixa: `.photo` abre o sensor inteiro, então a
+      // escolha é por formato, como o `.max` faz, só que limitada a 1920.
+      if let format = bestFourByThreeFormat(forCaptureDevice: captureDevice, maxSide: 1920) {
+        videoCaptureSession.sessionPreset = .inputPriority
+        do {
+          try captureDevice.lockForConfiguration()
+          captureDevice.flutterActiveFormat = format
+          captureDevice.unlockForConfiguration()
+          break
+        }
+      }
       if videoCaptureSession.canSetSessionPreset(.hd1920x1080) {
         videoCaptureSession.sessionPreset = .hd1920x1080
         break
@@ -338,6 +357,40 @@ final class DefaultCamera: NSObject, Camera {
     let size = videoDimensionsConverter(captureDevice.flutterActiveFormat)
     previewSize = CGSize(width: CGFloat(size.width), height: CGFloat(size.height))
     audioCaptureSession.sessionPreset = videoCaptureSession.sessionPreset
+  }
+
+  /// Fork VIK: o formato 4:3 de maior contagem de pixels cujo lado maior não passa de
+  /// `maxSide`. Empate prefere o subtipo do formato ativo, como `highestResolutionFormat`;
+  /// `nil` quando o aparelho não tem formato 4:3 nessa faixa.
+  func bestFourByThreeFormat(forCaptureDevice captureDevice: CaptureDevice, maxSide: Int32)
+    -> CaptureDeviceFormat?
+  {
+    let preferredSubType = CMFormatDescriptionGetMediaSubType(
+      captureDevice.flutterActiveFormat.formatDescription)
+    var bestFormat: CaptureDeviceFormat? = nil
+    var maxPixelCount: UInt = 0
+    var isBestSubTypePreferred = false
+
+    for format in captureDevice.flutterFormats {
+      let resolution = videoDimensionsConverter(format)
+      let width = resolution.width
+      let height = resolution.height
+      guard width > 0, height > 0, width * 3 == height * 4, max(width, height) <= maxSide
+      else { continue }
+      let pixelCount = UInt(width) * UInt(height)
+      let subType = CMFormatDescriptionGetMediaSubType(format.formatDescription)
+      let isSubTypePreferred = subType == preferredSubType
+
+      if pixelCount > maxPixelCount
+        || (pixelCount == maxPixelCount && isSubTypePreferred && !isBestSubTypePreferred)
+      {
+        bestFormat = format
+        maxPixelCount = pixelCount
+        isBestSubTypePreferred = isSubTypePreferred
+      }
+    }
+
+    return bestFormat
   }
 
   /// Finds the highest available resolution in terms of pixel count for the given device.
@@ -710,6 +763,9 @@ final class DefaultCamera: NSObject, Camera {
     if flashMode != .torch {
       settings.flashMode = getAVCaptureFlashMode(for: flashMode)
     }
+
+    // Fork VIK: pede o processamento de qualidade, limitado pelo teto fixado na saída.
+    settings.photoQualityPrioritization = capturePhotoOutput.maxPhotoQualityPrioritization
 
     let path: String
     do {

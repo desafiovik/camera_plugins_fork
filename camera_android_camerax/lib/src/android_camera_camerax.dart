@@ -1564,8 +1564,12 @@ class AndroidCameraCameraX extends CameraPlatform {
         boundSize = CameraSize(width: 1280, height: 720);
         aspectRatio = AspectRatio.ratio16To9;
       case ResolutionPreset.veryHigh:
-        boundSize = CameraSize(width: 1920, height: 1080);
-        aspectRatio = AspectRatio.ratio16To9;
+        // Fork VIK (desafiovik/camera_plugins_fork): 4:3 com lado maior de
+        // 1920, o enquadramento do sensor e do app de câmera do sistema. O
+        // 16:9 de upstream descartava 25% do campo lateral em pé, e a
+        // comunidade lia isso como "zoom" no comprovante (card 86akfrx6z).
+        boundSize = CameraSize(width: 1920, height: 1440);
+        aspectRatio = AspectRatio.ratio4To3;
       case ResolutionPreset.ultraHigh:
         boundSize = CameraSize(width: 3840, height: 2160);
         aspectRatio = AspectRatio.ratio16To9;

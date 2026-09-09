@@ -95,4 +95,85 @@ final class CameraSessionPresetsTests: XCTestCase {
 
     waitForExpectations(timeout: 30, handler: nil)
   }
+
+  // Fork VIK (card 86akfrx6z): `veryHigh` escolhe o formato 4:3 de maior resolução com lado
+  // maior até 1920, em vez do preset 16:9 `.hd1920x1080`.
+  func testResolutionPresetVeryHigh_mustPickLargestFourByThreeFormatUpTo1920() {
+    let presetExpectation = expectation(description: "Expected inputPriority preset set")
+    let formatExpectation = expectation(description: "Expected 1920x1440 format set")
+
+    let videoSessionMock = MockCaptureSession()
+    videoSessionMock.canSetSessionPresetStub = { _ in true }
+    videoSessionMock.setSessionPresetStub = { preset in
+      if preset == .inputPriority {
+        presetExpectation.fulfill()
+      }
+      XCTAssertNotEqual(preset, .hd1920x1080, "16:9 não pode mais ser escolhido para veryHigh")
+    }
+
+    let wide1080 = MockCaptureDeviceFormat()
+    let fourByThree1440 = MockCaptureDeviceFormat()
+    let fourByThree3024 = MockCaptureDeviceFormat()
+    let fourByThree960 = MockCaptureDeviceFormat()
+    let dimensions: [ObjectIdentifier: CMVideoDimensions] = [
+      ObjectIdentifier(wide1080): CMVideoDimensions(width: 1920, height: 1080),
+      ObjectIdentifier(fourByThree1440): CMVideoDimensions(width: 1920, height: 1440),
+      ObjectIdentifier(fourByThree3024): CMVideoDimensions(width: 4032, height: 3024),
+      ObjectIdentifier(fourByThree960): CMVideoDimensions(width: 1280, height: 960),
+    ]
+
+    let captureDeviceMock = MockCaptureDevice()
+    captureDeviceMock.flutterFormats = [wide1080, fourByThree960, fourByThree1440, fourByThree3024]
+    captureDeviceMock.activeFormatStub = { wide1080 }
+    captureDeviceMock.setActiveFormatStub = { format in
+      if format === fourByThree1440 {
+        formatExpectation.fulfill()
+      } else {
+        XCTFail("formato errado escolhido para veryHigh")
+      }
+    }
+
+    let configuration = CameraTestUtils.createTestCameraConfiguration()
+    configuration.videoCaptureDeviceFactory = { _ in captureDeviceMock }
+    configuration.videoDimensionsConverter = { format in
+      dimensions[ObjectIdentifier(format)] ?? CMVideoDimensions(width: 0, height: 0)
+    }
+    configuration.videoCaptureSession = videoSessionMock
+    configuration.mediaSettings = CameraTestUtils.createDefaultMediaSettings(
+      resolutionPreset: FCPPlatformResolutionPreset.veryHigh)
+
+    let _ = CameraTestUtils.createTestCamera(configuration)
+
+    waitForExpectations(timeout: 30, handler: nil)
+  }
+
+  // Fork VIK: sem formato 4:3 na faixa, `veryHigh` volta ao preset 16:9 de upstream.
+  func testResolutionPresetVeryHigh_fallsBackTo1080pWithoutFourByThreeFormat() {
+    let expectation = self.expectation(description: "Expected hd1920x1080 preset set")
+
+    let videoSessionMock = MockCaptureSession()
+    videoSessionMock.canSetSessionPresetStub = { _ in true }
+    videoSessionMock.setSessionPresetStub = { preset in
+      if preset == .hd1920x1080 {
+        expectation.fulfill()
+      }
+    }
+
+    let captureDeviceMock = MockCaptureDevice()
+    captureDeviceMock.flutterFormats = [MockCaptureDeviceFormat()]
+    captureDeviceMock.setActiveFormatStub = { _ in
+      XCTFail("nenhum formato deveria ser fixado sem candidato 4:3")
+    }
+
+    let configuration = CameraTestUtils.createTestCameraConfiguration()
+    configuration.videoCaptureDeviceFactory = { _ in captureDeviceMock }
+    configuration.videoDimensionsConverter = { _ in CMVideoDimensions(width: 1920, height: 1080) }
+    configuration.videoCaptureSession = videoSessionMock
+    configuration.mediaSettings = CameraTestUtils.createDefaultMediaSettings(
+      resolutionPreset: FCPPlatformResolutionPreset.veryHigh)
+
+    let _ = CameraTestUtils.createTestCamera(configuration)
+
+    waitForExpectations(timeout: 30, handler: nil)
+  }
 }

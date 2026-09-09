@@ -856,9 +856,10 @@ void main() {
               height: 720,
             );
           case ResolutionPreset.veryHigh:
+            // Fork VIK: 4:3 com lado maior 1920, o enquadramento do sensor.
             expectedBoundSize = CameraSize.pigeon_detached(
               width: 1920,
-              height: 1080,
+              height: 1440,
             );
           case ResolutionPreset.ultraHigh:
             expectedBoundSize = CameraSize.pigeon_detached(
@@ -1010,9 +1011,10 @@ void main() {
               height: 720,
             );
           case ResolutionPreset.veryHigh:
+            // Fork VIK: 4:3 com lado maior 1920, o enquadramento do sensor.
             expectedPreferredResolution = CameraSize.pigeon_detached(
               width: 1920,
-              height: 1080,
+              height: 1440,
             );
           case ResolutionPreset.ultraHigh:
             expectedPreferredResolution = CameraSize.pigeon_detached(
@@ -1132,10 +1134,12 @@ void main() {
         AspectRatioStrategyFallbackRule? expectedFallbackRule;
         switch (resolutionPreset) {
           case ResolutionPreset.low:
+          // Fork VIK: veryHigh é 4:3, como o sensor e o app de câmera do
+          // sistema; 16:9 descartava 25% do campo lateral em pé.
+          case ResolutionPreset.veryHigh:
             expectedAspectRatio = AspectRatio.ratio4To3;
             expectedFallbackRule = AspectRatioStrategyFallbackRule.auto;
           case ResolutionPreset.high:
-          case ResolutionPreset.veryHigh:
           case ResolutionPreset.ultraHigh:
             expectedAspectRatio = AspectRatio.ratio16To9;
             expectedFallbackRule = AspectRatioStrategyFallbackRule.auto;

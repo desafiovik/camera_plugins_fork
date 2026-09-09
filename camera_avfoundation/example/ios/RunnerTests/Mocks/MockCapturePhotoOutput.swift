@@ -18,6 +18,7 @@ final class MockCapturePhotoOutput: NSObject, CapturePhotoOutput {
   var availablePhotoCodecTypes: [AVVideoCodecType] = []
   var isHighResolutionCaptureEnabled = false
   var supportedFlashModes: [AVCaptureDevice.FlashMode] = []
+  var maxPhotoQualityPrioritization: AVCapturePhotoOutput.QualityPrioritization = .balanced
 
   // Stub that is called when the corresponding public method is called.
   var capturePhotoWithSettingsStub:
