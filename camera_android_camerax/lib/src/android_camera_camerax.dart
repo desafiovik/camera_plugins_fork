@@ -523,9 +523,11 @@ class AndroidCameraCameraX extends CameraPlatform {
         .getResolutionInfo())!;
 
     // Mark auto-focus and auto-exposure as available operations as CameraX
-    // does its best across devices to support these by default. Point support
-    // is per lens: a fixed-focus front camera advertises zero AF regions and a
-    // tap there cannot move the lens, so the app must not promise it.
+    // does its best across devices to support these by default.
+    // Fork VIK (desafiovik/camera_plugins_fork): point support is per lens.
+    // Upstream hard-coded both flags to true; a fixed-focus front camera
+    // advertises zero AF regions and a tap there cannot move the lens, so the
+    // app must not promise it.
     const ExposureMode exposureMode = ExposureMode.auto;
     const FocusMode focusMode = FocusMode.auto;
     final camera2CameraInfo = Camera2CameraInfo.from(cameraInfo: cameraInfo!);
@@ -1483,19 +1485,25 @@ class AndroidCameraCameraX extends CameraPlatform {
     await liveCameraState!.observe(_createCameraClosingObserver(cameraId));
   }
 
-  /// Whether the lens accepts at least one metering region for [key]
-  /// (`CONTROL_MAX_REGIONS_AF` or `CONTROL_MAX_REGIONS_AE`).
+  /// Fork VIK (desafiovik/camera_plugins_fork): whether the lens accepts at
+  /// least one metering region for [key] (`CONTROL_MAX_REGIONS_AF` or
+  /// `CONTROL_MAX_REGIONS_AE`).
   ///
-  /// The key is mandatory in Camera2, but a missing value reads as
-  /// unsupported rather than as a crash: it only costs the tap-to-focus frame.
+  /// The probe only decides whether the app offers tap-to-focus. A missing
+  /// value or a failed channel reads as unsupported: losing the focus frame
+  /// is cheaper than failing to open the camera.
   Future<bool> _supportsMeteringRegions(
     Camera2CameraInfo camera2CameraInfo,
     CameraCharacteristicsKey key,
   ) async {
-    final Object? regions = await camera2CameraInfo.getCameraCharacteristic(
-      key,
-    );
-    return regions is int && regions > 0;
+    try {
+      final Object? regions = await camera2CameraInfo.getCameraCharacteristic(
+        key,
+      );
+      return regions is int && regions > 0;
+    } on PlatformException {
+      return false;
+    }
   }
 
   /// Creates [Observer] of the [CameraState] that will:

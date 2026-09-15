@@ -29,6 +29,8 @@ class CameraCharacteristicsProxyApi extends PigeonApiCameraCharacteristics {
     return CameraCharacteristics.SENSOR_ORIENTATION;
   }
 
+  // Fork VIK (desafiovik/camera_plugins_fork): metering region counts, read at
+  // initializeCamera to report per-lens focus/exposure point support.
   @NonNull
   @Override
   public CameraCharacteristics.Key<?> controlMaxRegionsAf() {

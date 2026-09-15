@@ -7235,6 +7235,8 @@ abstract class PigeonApiCameraCharacteristics(
    *
    * This key is available on all devices.
    */
+  // Fork VIK (desafiovik/camera_plugins_fork): controlMaxRegionsAf/Ae cloned by
+  // hand from the sensorOrientation blocks (abstract fun + message handler).
   abstract fun controlMaxRegionsAf(): android.hardware.camera2.CameraCharacteristics.Key<*>
 
   /**

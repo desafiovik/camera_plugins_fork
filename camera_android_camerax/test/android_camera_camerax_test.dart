@@ -2464,6 +2464,71 @@ void main() {
     },
   );
 
+  test(
+    'initializeCamera treats a failed capability probe as unsupported instead of failing the camera',
+    () async {
+      // The probe only decides whether the app draws a focus frame. A host
+      // error on the channel must not turn into "camera failed to open".
+      final camera = AndroidCameraCameraX();
+      const cameraId = 23;
+      final mockProcessCameraProvider = MockProcessCameraProvider();
+      final mockPreview = MockPreview();
+      final mockCamera = MockCamera();
+      final mockCameraInfo = MockCameraInfo();
+      final mockCamera2CameraInfo = MockCamera2CameraInfo();
+
+      setUpOverridesForTestingUseCaseConfiguration(
+        mockProcessCameraProvider,
+        newPreview:
+            ({
+              int? targetRotation,
+              CameraIntegerRange? targetFpsRange,
+              ResolutionSelector? resolutionSelector,
+            }) => mockPreview,
+      );
+      PigeonOverrides.camera2CameraInfo_from =
+          ({required dynamic cameraInfo}) => mockCamera2CameraInfo;
+      when(mockCamera2CameraInfo.getCameraCharacteristic(any)).thenThrow(
+        PlatformException(code: 'channel-error', message: 'host gone'),
+      );
+      when(
+        mockPreview.setSurfaceProvider(any),
+      ).thenAnswer((_) async => cameraId);
+      when(mockPreview.getResolutionInfo()).thenAnswer(
+        (_) async => ResolutionInfo.pigeon_detached(
+          resolution: CameraSize.pigeon_detached(width: 640, height: 480),
+        ),
+      );
+      when(
+        mockProcessCameraProvider.bindToLifecycle(any, any),
+      ).thenAnswer((_) async => mockCamera);
+      when(mockCamera.getCameraInfo()).thenAnswer((_) async => mockCameraInfo);
+      when(mockCamera.cameraControl).thenReturn(MockCameraControl());
+      when(
+        mockCameraInfo.getCameraState(),
+      ).thenAnswer((_) async => MockLiveCameraState());
+
+      await camera.createCameraWithSettings(
+        const CameraDescription(
+          name: 'back',
+          lensDirection: CameraLensDirection.back,
+          sensorOrientation: 90,
+        ),
+        const MediaSettings(resolutionPreset: ResolutionPreset.medium),
+      );
+      final events = StreamQueue<CameraInitializedEvent>(
+        camera.onCameraInitialized(cameraId),
+      );
+
+      await camera.initializeCamera(cameraId);
+
+      final event = await events.next;
+      expect(event.focusPointSupported, isFalse);
+      expect(event.exposurePointSupported, isFalse);
+      await events.cancel();
+    },
+  );
+
   test('onCameraInitialized stream emits CameraInitializedEvents', () async {
     final camera = AndroidCameraCameraX();
     const cameraId = 16;

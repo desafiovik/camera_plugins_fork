@@ -1244,6 +1244,9 @@ abstract class CameraCharacteristics {
   @static
   late CameraCharacteristicsKey sensorOrientation;
 
+  /// Fork VIK (desafiovik/camera_plugins_fork): the two keys below feed the
+  /// per-lens focus/exposure point support reported at initializeCamera.
+  ///
   /// The maximum number of metering regions that can be used by the auto-focus
   /// routine. Zero means the lens has no focus point to offer: fixed-focus
   /// front cameras and LEGACY devices.

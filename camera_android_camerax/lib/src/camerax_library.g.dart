@@ -255,6 +255,11 @@ class PigeonOverrides {
 
   /// Overrides [CameraCharacteristics.sensorOrientation].
   static CameraCharacteristicsKey? cameraCharacteristics_sensorOrientation;
+  // Fork VIK (desafiovik/camera_plugins_fork): controlMaxRegionsAf/Ae were
+  // added to pigeons/camerax_library.dart and cloned by hand from the
+  // sensorOrientation blocks (overrides, reset, getters, pigeonVar_) because
+  // regenerating with the local pigeon rewrites the whole file against the
+  // upstream commit. Re-run pigeon only when bumping the base.
   /// Overrides [CameraCharacteristics.controlMaxRegionsAf].
   static CameraCharacteristicsKey? cameraCharacteristics_controlMaxRegionsAf;
   /// Overrides [CameraCharacteristics.controlMaxRegionsAe].
