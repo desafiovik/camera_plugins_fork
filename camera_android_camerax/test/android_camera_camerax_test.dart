@@ -328,6 +328,10 @@ void main() {
         };
     PigeonOverrides.cameraCharacteristics_sensorOrientation =
         MockCameraCharacteristicsKey();
+    PigeonOverrides.cameraCharacteristics_controlMaxRegionsAf =
+        MockCameraCharacteristicsKey();
+    PigeonOverrides.cameraCharacteristics_controlMaxRegionsAe =
+        MockCameraCharacteristicsKey();
     PigeonOverrides.fallbackStrategy_lowerQualityOrHigherThan =
         lowerQualityOrHigherThanFallbackStrategy ??
         ({required VideoQuality quality}) {
@@ -737,6 +741,10 @@ void main() {
           };
       PigeonOverrides.cameraCharacteristics_sensorOrientation =
           mockCameraCharacteristicsKey;
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAf =
+          MockCameraCharacteristicsKey();
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAe =
+          MockCameraCharacteristicsKey();
       PigeonOverrides.fallbackStrategy_lowerQualityOrHigherThan =
           ({required VideoQuality quality}) {
             return MockFallbackStrategy();
@@ -1390,6 +1398,10 @@ void main() {
           };
       PigeonOverrides.cameraCharacteristics_sensorOrientation =
           mockCameraCharacteristicsKey;
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAf =
+          MockCameraCharacteristicsKey();
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAe =
+          MockCameraCharacteristicsKey();
       PigeonOverrides.fallbackStrategy_lowerQualityOrHigherThan =
           ({required VideoQuality quality}) {
             return MockFallbackStrategy();
@@ -1901,6 +1913,10 @@ void main() {
           };
       PigeonOverrides.cameraCharacteristics_sensorOrientation =
           mockCameraCharacteristicsKey;
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAf =
+          MockCameraCharacteristicsKey();
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAe =
+          MockCameraCharacteristicsKey();
       PigeonOverrides.fallbackStrategy_lowerQualityOrHigherThan =
           ({required VideoQuality quality}) {
             return MockFallbackStrategy();
@@ -2281,6 +2297,10 @@ void main() {
         ({required int width, required int height}) => MockCameraSize();
     PigeonOverrides.cameraCharacteristics_sensorOrientation =
         MockCameraCharacteristicsKey();
+    PigeonOverrides.cameraCharacteristics_controlMaxRegionsAf =
+        MockCameraCharacteristicsKey();
+    PigeonOverrides.cameraCharacteristics_controlMaxRegionsAe =
+        MockCameraCharacteristicsKey();
     PigeonOverrides.cameraIntegerRange_new =
         ({required int lower, required int upper}) {
           return CameraIntegerRange.pigeon_detached(lower: 0, upper: 0);
@@ -2368,6 +2388,79 @@ void main() {
       verify(camera.processCameraProvider!.unbindAll());
       verify(camera.imageAnalysis!.clearAnalyzer());
       expect(stoppedListeningForDeviceOrientationChange, isTrue);
+    },
+  );
+
+  test(
+    'initializeCamera reports focus and exposure point support from the camera characteristics',
+    () async {
+      // A fixed-focus front camera advertises zero AF regions. Upstream
+      // hard-coded `focusPointSupported=true` for every lens, so the app drew
+      // a focus frame where a tap could not move the lens.
+      final camera = AndroidCameraCameraX();
+      const cameraId = 22;
+      final mockProcessCameraProvider = MockProcessCameraProvider();
+      final mockPreview = MockPreview();
+      final mockCamera = MockCamera();
+      final mockCameraInfo = MockCameraInfo();
+      final mockCamera2CameraInfo = MockCamera2CameraInfo();
+      final afKey = MockCameraCharacteristicsKey();
+      final aeKey = MockCameraCharacteristicsKey();
+
+      setUpOverridesForTestingUseCaseConfiguration(
+        mockProcessCameraProvider,
+        newPreview:
+            ({
+              int? targetRotation,
+              CameraIntegerRange? targetFpsRange,
+              ResolutionSelector? resolutionSelector,
+            }) => mockPreview,
+      );
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAf = afKey;
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAe = aeKey;
+      PigeonOverrides.camera2CameraInfo_from =
+          ({required dynamic cameraInfo}) => mockCamera2CameraInfo;
+      when(
+        mockCamera2CameraInfo.getCameraCharacteristic(afKey),
+      ).thenAnswer((_) async => 0);
+      when(
+        mockCamera2CameraInfo.getCameraCharacteristic(aeKey),
+      ).thenAnswer((_) async => 1);
+      when(
+        mockPreview.setSurfaceProvider(any),
+      ).thenAnswer((_) async => cameraId);
+      when(mockPreview.getResolutionInfo()).thenAnswer(
+        (_) async => ResolutionInfo.pigeon_detached(
+          resolution: CameraSize.pigeon_detached(width: 640, height: 480),
+        ),
+      );
+      when(
+        mockProcessCameraProvider.bindToLifecycle(any, any),
+      ).thenAnswer((_) async => mockCamera);
+      when(mockCamera.getCameraInfo()).thenAnswer((_) async => mockCameraInfo);
+      when(mockCamera.cameraControl).thenReturn(MockCameraControl());
+      when(
+        mockCameraInfo.getCameraState(),
+      ).thenAnswer((_) async => MockLiveCameraState());
+
+      await camera.createCameraWithSettings(
+        const CameraDescription(
+          name: 'front',
+          lensDirection: CameraLensDirection.front,
+          sensorOrientation: 270,
+        ),
+        const MediaSettings(resolutionPreset: ResolutionPreset.medium),
+      );
+      final events = StreamQueue<CameraInitializedEvent>(
+        camera.onCameraInitialized(cameraId),
+      );
+
+      await camera.initializeCamera(cameraId);
+
+      final event = await events.next;
+      expect(event.focusPointSupported, isFalse);
+      expect(event.exposurePointSupported, isTrue);
+      await events.cancel();
     },
   );
 
@@ -3442,6 +3535,10 @@ void main() {
       };
       PigeonOverrides.cameraCharacteristics_sensorOrientation =
           mockCameraCharacteristicsKey;
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAf =
+          MockCameraCharacteristicsKey();
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAe =
+          MockCameraCharacteristicsKey();
       GenericsPigeonOverrides.observerNew =
           <T>({required void Function(Observer<T>, T) onChanged}) {
             return Observer<T>.detached(onChanged: onChanged);
@@ -3705,6 +3802,10 @@ void main() {
       };
       PigeonOverrides.cameraCharacteristics_sensorOrientation =
           mockCameraCharacteristicsKey;
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAf =
+          MockCameraCharacteristicsKey();
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAe =
+          MockCameraCharacteristicsKey();
       GenericsPigeonOverrides.observerNew =
           <T>({required void Function(Observer<T>, T) onChanged}) {
             return Observer<T>.detached(onChanged: onChanged);

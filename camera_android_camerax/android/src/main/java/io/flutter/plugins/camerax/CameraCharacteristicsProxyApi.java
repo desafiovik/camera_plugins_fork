@@ -28,4 +28,16 @@ class CameraCharacteristicsProxyApi extends PigeonApiCameraCharacteristics {
   public CameraCharacteristics.Key<?> sensorOrientation() {
     return CameraCharacteristics.SENSOR_ORIENTATION;
   }
+
+  @NonNull
+  @Override
+  public CameraCharacteristics.Key<?> controlMaxRegionsAf() {
+    return CameraCharacteristics.CONTROL_MAX_REGIONS_AF;
+  }
+
+  @NonNull
+  @Override
+  public CameraCharacteristics.Key<?> controlMaxRegionsAe() {
+    return CameraCharacteristics.CONTROL_MAX_REGIONS_AE;
+  }
 }

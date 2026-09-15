@@ -255,6 +255,10 @@ class PigeonOverrides {
 
   /// Overrides [CameraCharacteristics.sensorOrientation].
   static CameraCharacteristicsKey? cameraCharacteristics_sensorOrientation;
+  /// Overrides [CameraCharacteristics.controlMaxRegionsAf].
+  static CameraCharacteristicsKey? cameraCharacteristics_controlMaxRegionsAf;
+  /// Overrides [CameraCharacteristics.controlMaxRegionsAe].
+  static CameraCharacteristicsKey? cameraCharacteristics_controlMaxRegionsAe;
 
   /// Overrides [ProcessCameraProvider.getInstance].
   static Future<ProcessCameraProvider> Function()?
@@ -308,6 +312,8 @@ class PigeonOverrides {
     resolutionFilter_createWithOnePreferredSize = null;
     cameraCharacteristics_infoSupportedHardwareLevel = null;
     cameraCharacteristics_sensorOrientation = null;
+    cameraCharacteristics_controlMaxRegionsAf = null;
+    cameraCharacteristics_controlMaxRegionsAe = null;
     camera2CameraInfo_from = null;
     displayOrientedMeteringPointFactory_new = null;
   }
@@ -9641,6 +9647,25 @@ class CameraCharacteristics extends PigeonInternalProxyApiBaseClass {
   static final CameraCharacteristicsKey _sensorOrientation =
       pigeonVar_sensorOrientation();
 
+  /// The maximum number of metering regions that can be used by the auto-focus
+  /// routine. Zero means the lens has no focus point to offer: fixed-focus
+  /// front cameras and LEGACY devices.
+  ///
+  /// Value is int.
+  ///
+  /// This key is available on all devices.
+  static final CameraCharacteristicsKey _controlMaxRegionsAf =
+      pigeonVar_controlMaxRegionsAf();
+
+  /// The maximum number of metering regions that can be used by the
+  /// auto-exposure routine. Zero means the sensor cannot meter on a point.
+  ///
+  /// Value is int.
+  ///
+  /// This key is available on all devices.
+  static final CameraCharacteristicsKey _controlMaxRegionsAe =
+      pigeonVar_controlMaxRegionsAe();
+
   /// Generally classifies the overall set of the camera device functionality.
   ///
   /// Value is `InfoSupportedHardwareLevel`.
@@ -9659,6 +9684,27 @@ class CameraCharacteristics extends PigeonInternalProxyApiBaseClass {
   static CameraCharacteristicsKey get sensorOrientation =>
       PigeonOverrides.cameraCharacteristics_sensorOrientation ??
       _sensorOrientation;
+
+  /// The maximum number of metering regions that can be used by the auto-focus
+  /// routine. Zero means the lens has no focus point to offer: fixed-focus
+  /// front cameras and LEGACY devices.
+  ///
+  /// Value is int.
+  ///
+  /// This key is available on all devices.
+  static CameraCharacteristicsKey get controlMaxRegionsAf =>
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAf ??
+      _controlMaxRegionsAf;
+
+  /// The maximum number of metering regions that can be used by the
+  /// auto-exposure routine. Zero means the sensor cannot meter on a point.
+  ///
+  /// Value is int.
+  ///
+  /// This key is available on all devices.
+  static CameraCharacteristicsKey get controlMaxRegionsAe =>
+      PigeonOverrides.cameraCharacteristics_controlMaxRegionsAe ??
+      _controlMaxRegionsAe;
 
   static void pigeon_setUpMessageHandlers({
     bool pigeon_clearHandlers = false,
@@ -9762,6 +9808,78 @@ class CameraCharacteristics extends PigeonInternalProxyApiBaseClass {
     () async {
       const pigeonVar_channelName =
           'dev.flutter.pigeon.camera_android_camerax.CameraCharacteristics.sensorOrientation';
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        pigeonVar_channelName,
+        pigeonChannelCodec,
+        binaryMessenger: pigeonVar_binaryMessenger,
+      );
+      final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+        <Object?>[pigeonVar_instanceIdentifier],
+      );
+      final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+      if (pigeonVar_replyList == null) {
+        throw _createConnectionError(pigeonVar_channelName);
+      } else if (pigeonVar_replyList.length > 1) {
+        throw PlatformException(
+          code: pigeonVar_replyList[0]! as String,
+          message: pigeonVar_replyList[1] as String?,
+          details: pigeonVar_replyList[2],
+        );
+      } else {
+        return;
+      }
+    }();
+    return pigeonVar_instance;
+  }
+
+  static CameraCharacteristicsKey pigeonVar_controlMaxRegionsAf() {
+    final CameraCharacteristicsKey pigeonVar_instance =
+        CameraCharacteristicsKey.pigeon_detached();
+    final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
+        _PigeonInternalProxyApiBaseCodec(PigeonInstanceManager.instance);
+    final BinaryMessenger pigeonVar_binaryMessenger =
+        ServicesBinding.instance.defaultBinaryMessenger;
+    final int pigeonVar_instanceIdentifier = PigeonInstanceManager.instance
+        .addDartCreatedInstance(pigeonVar_instance);
+    () async {
+      const pigeonVar_channelName =
+          'dev.flutter.pigeon.camera_android_camerax.CameraCharacteristics.controlMaxRegionsAf';
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        pigeonVar_channelName,
+        pigeonChannelCodec,
+        binaryMessenger: pigeonVar_binaryMessenger,
+      );
+      final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+        <Object?>[pigeonVar_instanceIdentifier],
+      );
+      final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+      if (pigeonVar_replyList == null) {
+        throw _createConnectionError(pigeonVar_channelName);
+      } else if (pigeonVar_replyList.length > 1) {
+        throw PlatformException(
+          code: pigeonVar_replyList[0]! as String,
+          message: pigeonVar_replyList[1] as String?,
+          details: pigeonVar_replyList[2],
+        );
+      } else {
+        return;
+      }
+    }();
+    return pigeonVar_instance;
+  }
+
+  static CameraCharacteristicsKey pigeonVar_controlMaxRegionsAe() {
+    final CameraCharacteristicsKey pigeonVar_instance =
+        CameraCharacteristicsKey.pigeon_detached();
+    final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
+        _PigeonInternalProxyApiBaseCodec(PigeonInstanceManager.instance);
+    final BinaryMessenger pigeonVar_binaryMessenger =
+        ServicesBinding.instance.defaultBinaryMessenger;
+    final int pigeonVar_instanceIdentifier = PigeonInstanceManager.instance
+        .addDartCreatedInstance(pigeonVar_instance);
+    () async {
+      const pigeonVar_channelName =
+          'dev.flutter.pigeon.camera_android_camerax.CameraCharacteristics.controlMaxRegionsAe';
       final pigeonVar_channel = BasicMessageChannel<Object?>(
         pigeonVar_channelName,
         pigeonChannelCodec,

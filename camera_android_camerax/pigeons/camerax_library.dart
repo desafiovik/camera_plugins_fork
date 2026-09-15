@@ -1243,6 +1243,25 @@ abstract class CameraCharacteristics {
   /// This key is available on all devices.
   @static
   late CameraCharacteristicsKey sensorOrientation;
+
+  /// The maximum number of metering regions that can be used by the auto-focus
+  /// routine. Zero means the lens has no focus point to offer: fixed-focus
+  /// front cameras and LEGACY devices.
+  ///
+  /// Value is int.
+  ///
+  /// This key is available on all devices.
+  @static
+  late CameraCharacteristicsKey controlMaxRegionsAf;
+
+  /// The maximum number of metering regions that can be used by the
+  /// auto-exposure routine. Zero means the sensor cannot meter on a point.
+  ///
+  /// Value is int.
+  ///
+  /// This key is available on all devices.
+  @static
+  late CameraCharacteristicsKey controlMaxRegionsAe;
 }
 
 /// An interface for retrieving Camera2-related camera information.

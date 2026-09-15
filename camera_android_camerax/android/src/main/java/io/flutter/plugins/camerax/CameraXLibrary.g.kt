@@ -7226,6 +7226,27 @@ abstract class PigeonApiCameraCharacteristics(
    */
   abstract fun sensorOrientation(): android.hardware.camera2.CameraCharacteristics.Key<*>
 
+  /**
+   * The maximum number of metering regions that can be used by the auto-focus
+   * routine. Zero means the lens has no focus point to offer: fixed-focus
+   * front cameras and LEGACY devices.
+   *
+   * Value is int.
+   *
+   * This key is available on all devices.
+   */
+  abstract fun controlMaxRegionsAf(): android.hardware.camera2.CameraCharacteristics.Key<*>
+
+  /**
+   * The maximum number of metering regions that can be used by the
+   * auto-exposure routine. Zero means the sensor cannot meter on a point.
+   *
+   * Value is int.
+   *
+   * This key is available on all devices.
+   */
+  abstract fun controlMaxRegionsAe(): android.hardware.camera2.CameraCharacteristics.Key<*>
+
   companion object {
     @Suppress("LocalVariableName")
     fun setUpMessageHandlers(
@@ -7271,6 +7292,54 @@ abstract class PigeonApiCameraCharacteristics(
                 try {
                   api.pigeonRegistrar.instanceManager.addDartCreatedInstance(
                       api.sensorOrientation(), pigeon_identifierArg)
+                  listOf(null)
+                } catch (exception: Throwable) {
+                  CameraXLibraryPigeonUtils.wrapError(exception)
+                }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel =
+            BasicMessageChannel<Any?>(
+                binaryMessenger,
+                "dev.flutter.pigeon.camera_android_camerax.CameraCharacteristics.controlMaxRegionsAf",
+                codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val pigeon_identifierArg = args[0] as Long
+            val wrapped: List<Any?> =
+                try {
+                  api.pigeonRegistrar.instanceManager.addDartCreatedInstance(
+                      api.controlMaxRegionsAf(), pigeon_identifierArg)
+                  listOf(null)
+                } catch (exception: Throwable) {
+                  CameraXLibraryPigeonUtils.wrapError(exception)
+                }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel =
+            BasicMessageChannel<Any?>(
+                binaryMessenger,
+                "dev.flutter.pigeon.camera_android_camerax.CameraCharacteristics.controlMaxRegionsAe",
+                codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val pigeon_identifierArg = args[0] as Long
+            val wrapped: List<Any?> =
+                try {
+                  api.pigeonRegistrar.instanceManager.addDartCreatedInstance(
+                      api.controlMaxRegionsAe(), pigeon_identifierArg)
                   listOf(null)
                 } catch (exception: Throwable) {
                   CameraXLibraryPigeonUtils.wrapError(exception)
