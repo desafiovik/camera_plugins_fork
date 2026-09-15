@@ -352,6 +352,24 @@ class AndroidCameraCameraX extends CameraPlatform {
     MediaSettings(resolutionPreset: resolutionPreset, enableAudio: enableAudio),
   );
 
+  /// Fork VIK (desafiovik/camera_plugins_fork): focus and exposure state is
+  /// per camera, not per plugin instance.
+  ///
+  /// Upstream keeps `_currentFocusMode`, `_currentExposureMode` and the last
+  /// [FocusMeteringAction] on this singleton across `dispose`/`createCamera`,
+  /// so a lock left by a tap on the previous camera (a tap racing a lens
+  /// switch, or a locked focus when the screen closes) made the next camera
+  /// open locked, and the next `setFocusMode(locked)` short-circuited on
+  /// `_currentFocusMode == mode`. CameraX itself starts every bound camera in
+  /// continuous mode. Called at the start of [createCameraWithSettings].
+  @visibleForTesting
+  void resetFocusAndExposureState() {
+    _currentFocusMode = FocusMode.auto;
+    _currentExposureMode = ExposureMode.auto;
+    _defaultFocusPointLocked = false;
+    currentFocusMeteringAction = null;
+  }
+
   /// Creates an uninitialized camera instance and returns the camera ID.
   ///
   /// In the CameraX library, cameras are accessed by combining [UseCase]s
@@ -382,6 +400,8 @@ class AndroidCameraCameraX extends CameraPlatform {
     }
     // Choose CameraInfo to create CameraSelector by name associated with desired camera.
     final CameraInfo? chosenCameraInfo = _savedCameras[cameraDescription.name];
+
+    resetFocusAndExposureState();
 
     // Save CameraSelector that matches cameraDescription.
     final LensFacing cameraSelectorLensDirection =

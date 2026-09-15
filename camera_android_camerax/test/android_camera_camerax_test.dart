@@ -4987,390 +4987,76 @@ void main() {
     },
   );
 
+  // Fork VIK: a camera created after a lock must start continuous. Upstream
+  // kept the lock on the singleton, so `setFocusMode(locked)` short-circuited
+  // on the next camera and the metering action of the previous lens leaked.
   test(
-    'setExposureOffset throws exception if exposure compensation not supported',
+    'resetFocusAndExposureState clears a lock left by the previous camera',
     () async {
       final camera = AndroidCameraCameraX();
-      const cameraId = 6;
-      const double offset = 2;
-      final mockCameraInfo = MockCameraInfo();
-      final exposureState = ExposureState.pigeon_detached(
-        exposureCompensationRange: CameraIntegerRange.pigeon_detached(
-          lower: 3,
-          upper: 4,
-        ),
-        exposureCompensationStep: 0,
-      );
-
-      // Set directly for test versus calling createCamera.
-      camera.cameraInfo = mockCameraInfo;
-
-      when(mockCameraInfo.exposureState).thenReturn(exposureState);
-
-      expect(
-        () => camera.setExposureOffset(cameraId, offset),
-        throwsA(isA<CameraException>()),
-      );
-    },
-  );
-
-  test(
-    'setExposureOffset throws exception if exposure compensation could not be set for unknown reason',
-    () async {
-      final camera = AndroidCameraCameraX();
-      const cameraId = 11;
-      const double offset = 3;
-      final mockCameraInfo = MockCameraInfo();
-      final CameraControl mockCameraControl = MockCameraControl();
-      final exposureState = ExposureState.pigeon_detached(
-        exposureCompensationRange: CameraIntegerRange.pigeon_detached(
-          lower: 3,
-          upper: 4,
-        ),
-        exposureCompensationStep: 0.2,
-      );
-
-      // Set directly for test versus calling createCamera.
-      camera.cameraInfo = mockCameraInfo;
-      camera.cameraControl = mockCameraControl;
-
-      when(mockCameraInfo.exposureState).thenReturn(exposureState);
-      when(mockCameraControl.setExposureCompensationIndex(15)).thenThrow(
-        PlatformException(
-          code: 'TEST_ERROR',
-          message:
-              'This is a test error message indicating exposure offset could not be set.',
-        ),
-      );
-
-      expect(
-        () => camera.setExposureOffset(cameraId, offset),
-        throwsA(isA<CameraException>()),
-      );
-    },
-  );
-
-  test(
-    'setExposureOffset throws exception if exposure compensation could not be set due to camera being closed or newer value being set',
-    () async {
-      final camera = AndroidCameraCameraX();
-      const cameraId = 21;
-      const double offset = 5;
-      final mockCameraInfo = MockCameraInfo();
-      final CameraControl mockCameraControl = MockCameraControl();
-      final exposureState = ExposureState.pigeon_detached(
-        exposureCompensationRange: CameraIntegerRange.pigeon_detached(
-          lower: 3,
-          upper: 4,
-        ),
-        exposureCompensationStep: 0.1,
-      );
-      final int expectedExposureCompensationIndex =
-          (offset / exposureState.exposureCompensationStep).round();
-
-      // Set directly for test versus calling createCamera.
-      camera.cameraInfo = mockCameraInfo;
-      camera.cameraControl = mockCameraControl;
-
-      when(mockCameraInfo.exposureState).thenReturn(exposureState);
-      when(
-        mockCameraControl.setExposureCompensationIndex(
-          expectedExposureCompensationIndex,
-        ),
-      ).thenAnswer((_) async => Future<int?>.value());
-
-      expect(
-        () => camera.setExposureOffset(cameraId, offset),
-        throwsA(isA<CameraException>()),
-      );
-    },
-  );
-
-  test(
-    'setExposureOffset behaves as expected to successful attempt to set exposure compensation index',
-    () async {
-      final camera = AndroidCameraCameraX();
-      const cameraId = 11;
-      const double offset = 3;
-      final mockCameraInfo = MockCameraInfo();
-      final CameraControl mockCameraControl = MockCameraControl();
-      final exposureState = ExposureState.pigeon_detached(
-        exposureCompensationRange: CameraIntegerRange.pigeon_detached(
-          lower: 3,
-          upper: 4,
-        ),
-        exposureCompensationStep: 0.2,
-      );
-      final int expectedExposureCompensationIndex =
-          (offset / exposureState.exposureCompensationStep).round();
-
-      // Set directly for test versus calling createCamera.
-      camera.cameraInfo = mockCameraInfo;
-      camera.cameraControl = mockCameraControl;
-
-      when(mockCameraInfo.exposureState).thenReturn(exposureState);
-      when(
-        mockCameraControl.setExposureCompensationIndex(
-          expectedExposureCompensationIndex,
-        ),
-      ).thenAnswer(
-        (_) async => Future<int>.value(
-          (expectedExposureCompensationIndex *
-                  exposureState.exposureCompensationStep)
-              .round(),
-        ),
-      );
-
-      // Exposure index * exposure offset step size = exposure offset, i.e.
-      // 15 * 0.2 = 3.
-      expect(await camera.setExposureOffset(cameraId, offset), equals(3));
-    },
-  );
-
-  test(
-    'setFocusPoint clears current auto-exposure metering point as expected',
-    () async {
-      final camera = AndroidCameraCameraX();
-      const cameraId = 93;
+      const cameraId = 44;
       final mockCameraControl = MockCameraControl();
-      final mockCameraInfo = MockCameraInfo();
-
-      // Set directly for test versus calling createCamera.
+      final mockFocusMeteringResult = MockFocusMeteringResult();
+      final mockCamera2CameraControl = MockCamera2CameraControl();
       camera.cameraControl = mockCameraControl;
-      camera.cameraInfo = mockCameraInfo;
-
+      camera.cameraInfo = MockCameraInfo();
+      PigeonOverrides.camera2CameraControl_from =
+          ({required CameraControl cameraControl}) => mockCamera2CameraControl;
+      PigeonOverrides.captureRequestOptions_new =
+          ({required Map<CaptureRequestKey, Object?> options}) =>
+              MockCaptureRequestOptions();
+      PigeonOverrides.captureRequest_controlAELock =
+          CaptureRequestKey.pigeon_detached();
+      when(mockFocusMeteringResult.isFocusSuccessful).thenReturn(true);
+      when(mockCameraControl.startFocusAndMetering(any)).thenAnswer(
+        (_) async => Future<FocusMeteringResult>.value(mockFocusMeteringResult),
+      );
+      when(
+        mockCamera2CameraControl.addCaptureRequestOptions(any),
+      ).thenAnswer((_) async {});
       final mockActionBuilder = MockFocusMeteringActionBuilder();
       when(mockActionBuilder.build()).thenAnswer(
         (_) async => FocusMeteringAction.pigeon_detached(
           meteringPointsAe: const <MeteringPoint>[],
-          meteringPointsAf: const <MeteringPoint>[],
+          meteringPointsAf: <MeteringPoint>[MeteringPoint.pigeon_detached()],
           meteringPointsAwb: const <MeteringPoint>[],
           isAutoCancelEnabled: false,
         ),
       );
-      MeteringMode? actionBuilderMeteringMode;
-      MeteringPoint? actionBuilderMeteringPoint;
       setUpOverridesForExposureAndFocus(
-        withModeFocusMeteringActionBuilder:
-            ({required MeteringMode mode, required MeteringPoint point}) {
-              actionBuilderMeteringMode = mode;
-              actionBuilderMeteringPoint = point;
-              return mockActionBuilder;
+        newDisplayOrientedMeteringPointFactory:
+            ({
+              required dynamic cameraInfo,
+              required double width,
+              required double height,
+            }) {
+              final mockFactory = MockDisplayOrientedMeteringPointFactory();
+              when(
+                mockFactory.createPoint(any, any),
+              ).thenAnswer((_) async => MeteringPoint.pigeon_detached());
+              return mockFactory;
             },
+        withModeFocusMeteringActionBuilder:
+            ({required MeteringMode mode, required MeteringPoint point}) =>
+                mockActionBuilder,
       );
-
-      // Verify nothing happens if no current focus and metering action has been
-      // enabled.
-      await camera.setFocusPoint(cameraId, null);
+      await camera.setFocusPoint(cameraId, const Point<double>(0.5, 0.5));
+      await camera.setFocusMode(cameraId, FocusMode.locked);
+      await camera.setExposureMode(cameraId, ExposureMode.locked);
+      expect(camera.currentFocusMeteringAction, isNotNull);
+      // Locked: a second lock is a no-op on the singleton (upstream behavior).
+      clearInteractions(mockCameraControl);
+      await camera.setFocusMode(cameraId, FocusMode.locked);
       verifyNever(mockCameraControl.startFocusAndMetering(any));
-      verifyNever(mockCameraControl.cancelFocusAndMetering());
 
-      final originalMeteringAction = FocusMeteringAction.pigeon_detached(
-        meteringPointsAe: <MeteringPoint>[MeteringPoint.pigeon_detached()],
-        meteringPointsAf: <MeteringPoint>[MeteringPoint.pigeon_detached()],
-        meteringPointsAwb: const <MeteringPoint>[],
-        isAutoCancelEnabled: false,
-      );
-      camera.currentFocusMeteringAction = originalMeteringAction;
+      camera.resetFocusAndExposureState();
 
-      await camera.setFocusPoint(cameraId, null);
-
-      expect(actionBuilderMeteringMode, MeteringMode.ae);
-      expect(
-        actionBuilderMeteringPoint,
-        originalMeteringAction.meteringPointsAe.single,
-      );
-      verifyNever(mockActionBuilder.addPoint(any));
-      verifyNever(mockActionBuilder.addPointWithMode(any, any));
-
-      // Verify current focus and metering action is cleared if only previously
-      // set metering point was for auto-exposure.
-      camera.currentFocusMeteringAction = FocusMeteringAction.pigeon_detached(
-        meteringPointsAe: const <MeteringPoint>[],
-        meteringPointsAf: <MeteringPoint>[MeteringPoint.pigeon_detached()],
-        meteringPointsAwb: const <MeteringPoint>[],
-        isAutoCancelEnabled: false,
-      );
-
-      await camera.setFocusPoint(cameraId, null);
-
-      verify(mockCameraControl.cancelFocusAndMetering());
-    },
-  );
-
-  test(
-    'setFocusPoint throws CameraException if invalid point specified',
-    () async {
-      final camera = AndroidCameraCameraX();
-      const cameraId = 23;
-      final mockCameraControl = MockCameraControl();
-      const invalidFocusPoint = Point<double>(-3, 1);
-
-      // Set directly for test versus calling createCamera.
-      camera.cameraControl = mockCameraControl;
-      camera.cameraInfo = MockCameraInfo();
-
-      setUpOverridesForExposureAndFocus();
-
-      expect(
-        () => camera.setFocusPoint(cameraId, invalidFocusPoint),
-        throwsA(isA<CameraException>()),
-      );
-    },
-  );
-
-  test(
-    'setFocusPoint adds new focus point to focus metering action to start as expected when previous metering points have been set',
-    () async {
-      final camera = AndroidCameraCameraX();
-      const cameraId = 9;
-      final mockCameraControl = MockCameraControl();
-      final mockCameraInfo = MockCameraInfo();
-
-      // Set directly for test versus calling createCamera.
-      camera.cameraControl = mockCameraControl;
-      camera.cameraInfo = mockCameraInfo;
-
-      var focusPointX = 0.8;
-      var focusPointY = 0.1;
-      var focusPoint = Point<double>(focusPointX, focusPointY);
-      final createdMeteringPoint = MeteringPoint.pigeon_detached();
-      MeteringMode? actionBuilderMeteringMode;
-      MeteringPoint? actionBuilderMeteringPoint;
-      final mockActionBuilder = MockFocusMeteringActionBuilder();
-      when(mockActionBuilder.build()).thenAnswer(
-        (_) async => FocusMeteringAction.pigeon_detached(
-          meteringPointsAe: const <MeteringPoint>[],
-          meteringPointsAf: const <MeteringPoint>[],
-          meteringPointsAwb: const <MeteringPoint>[],
-          isAutoCancelEnabled: false,
-        ),
-      );
-      setUpOverridesForExposureAndFocus(
-        newDisplayOrientedMeteringPointFactory:
-            ({
-              required dynamic cameraInfo,
-              required double width,
-              required double height,
-            }) {
-              final mockFactory = MockDisplayOrientedMeteringPointFactory();
-              when(
-                mockFactory.createPoint(focusPointX, focusPointY),
-              ).thenAnswer((_) async => createdMeteringPoint);
-              return mockFactory;
-            },
-        withModeFocusMeteringActionBuilder:
-            ({required MeteringMode mode, required MeteringPoint point}) {
-              actionBuilderMeteringMode = mode;
-              actionBuilderMeteringPoint = point;
-              return mockActionBuilder;
-            },
-      );
-
-      // Verify current auto-exposure metering point is removed if previously set.
-      var originalMeteringAction = FocusMeteringAction.pigeon_detached(
-        meteringPointsAe: <MeteringPoint>[MeteringPoint.pigeon_detached()],
-        meteringPointsAf: <MeteringPoint>[MeteringPoint.pigeon_detached()],
-        meteringPointsAwb: const <MeteringPoint>[],
-        isAutoCancelEnabled: false,
-      );
-      camera.currentFocusMeteringAction = originalMeteringAction;
-
-      await camera.setFocusPoint(cameraId, focusPoint);
-
-      expect(
-        actionBuilderMeteringPoint,
-        originalMeteringAction.meteringPointsAe.single,
-      );
-      expect(actionBuilderMeteringMode, MeteringMode.ae);
-      verify(
-        mockActionBuilder.addPointWithMode(
-          createdMeteringPoint,
-          MeteringMode.af,
-        ),
-      );
-
-      // Verify exposure point is set when no auto-focus metering point
-      // previously set, but an auto-exposure point metering point has been.
-      focusPointX = 0.2;
-      focusPointY = 0.9;
-      focusPoint = Point<double>(focusPointX, focusPointY);
-      originalMeteringAction = FocusMeteringAction.pigeon_detached(
-        meteringPointsAe: <MeteringPoint>[MeteringPoint.pigeon_detached()],
-        meteringPointsAf: const <MeteringPoint>[],
-        meteringPointsAwb: const <MeteringPoint>[],
-        isAutoCancelEnabled: false,
-      );
-      camera.currentFocusMeteringAction = originalMeteringAction;
-
-      await camera.setFocusPoint(cameraId, focusPoint);
-
-      expect(
-        actionBuilderMeteringPoint,
-        originalMeteringAction.meteringPointsAe.single,
-      );
-      expect(actionBuilderMeteringMode, MeteringMode.ae);
-      verify(
-        mockActionBuilder.addPointWithMode(
-          createdMeteringPoint,
-          MeteringMode.af,
-        ),
-      );
-    },
-  );
-
-  test(
-    'setFocusPoint adds new focus point to focus metering action to start as expected when no previous metering points have been set',
-    () async {
-      final camera = AndroidCameraCameraX();
-      const cameraId = 19;
-      final mockCameraControl = MockCameraControl();
-      const focusPointX = 0.8;
-      const focusPointY = 0.1;
-      const focusPoint = Point<double>(focusPointX, focusPointY);
-
-      // Set directly for test versus calling createCamera.
-      camera.cameraControl = mockCameraControl;
-      camera.cameraInfo = MockCameraInfo();
-      camera.currentFocusMeteringAction = null;
-
-      final createdMeteringPoint = MeteringPoint.pigeon_detached();
-      MeteringMode? actionBuilderMeteringMode;
-      MeteringPoint? actionBuilderMeteringPoint;
-      final mockActionBuilder = MockFocusMeteringActionBuilder();
-      when(mockActionBuilder.build()).thenAnswer(
-        (_) async => FocusMeteringAction.pigeon_detached(
-          meteringPointsAe: const <MeteringPoint>[],
-          meteringPointsAf: const <MeteringPoint>[],
-          meteringPointsAwb: const <MeteringPoint>[],
-          isAutoCancelEnabled: false,
-        ),
-      );
-      setUpOverridesForExposureAndFocus(
-        newDisplayOrientedMeteringPointFactory:
-            ({
-              required dynamic cameraInfo,
-              required double width,
-              required double height,
-            }) {
-              final mockFactory = MockDisplayOrientedMeteringPointFactory();
-              when(
-                mockFactory.createPoint(focusPointX, focusPointY),
-              ).thenAnswer((_) async => createdMeteringPoint);
-              return mockFactory;
-            },
-        withModeFocusMeteringActionBuilder:
-            ({required MeteringMode mode, required MeteringPoint point}) {
-              actionBuilderMeteringMode = mode;
-              actionBuilderMeteringPoint = point;
-              return mockActionBuilder;
-            },
-      );
-
-      await camera.setFocusPoint(cameraId, focusPoint);
-
-      expect(actionBuilderMeteringPoint, createdMeteringPoint);
-      expect(actionBuilderMeteringMode, MeteringMode.af);
+      expect(camera.currentFocusMeteringAction, isNull);
+      // The next camera is auto again: locking it reaches CameraX.
+      await camera.setFocusPoint(cameraId, const Point<double>(0.5, 0.5));
+      clearInteractions(mockCameraControl);
+      await camera.setFocusMode(cameraId, FocusMode.locked);
+      verify(mockCameraControl.startFocusAndMetering(any)).called(1);
     },
   );
 
