@@ -364,6 +364,8 @@ class AndroidCameraCameraX extends CameraPlatform {
   /// continuous mode. Called at the start of [createCameraWithSettings].
   @visibleForTesting
   void resetFocusAndExposureState() {
+    // Mode and action move together: `setFocusMode(auto)` dereferences
+    // `currentFocusMeteringAction` only while the mode is `locked`.
     _currentFocusMode = FocusMode.auto;
     _currentExposureMode = ExposureMode.auto;
     _defaultFocusPointLocked = false;
